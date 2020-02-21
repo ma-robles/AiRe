@@ -1,7 +1,6 @@
 import serial
 from datetime import datetime as DT
 import datalog as dlog
-import time
 
 def raw2int(data):
     new_data = []
@@ -67,9 +66,7 @@ def int2str2(data):
     return strdata
 
 
-#port_name = '/dev/ttyUSB0'
-#port_name = '/dev/ttyAMA0'
-port_name = '/dev/ttyS0'
+port_name = '/dev/ttyUSB0'
 print('Puerto abierto')
 #init data
 my_minute = DT.strftime(DT.now(), '%Y-%m-%d %H:%M')
@@ -80,10 +77,8 @@ max_temp = float('-inf')
 min_temp = float('inf')
 max_vel = float('-inf')
 header_s = 'Fecha,UV,Radiación,WS,WD,Lluvia,Temperatura,Humedad,Presión,vBat,Tmin,Tmax,WSmax'
-while(True):
-  try:
-    with serial.Serial(port_name) as ser:
-    #while(True):
+with serial.Serial(port_name) as ser:
+    while(True):
         #get data
         start_data = b'0'
         while int.from_bytes(start_data,'big')!=0xaa:
@@ -126,8 +121,7 @@ while(True):
             print('minute:', new_minute)
             my_minute = new_minute
             for i,d in enumerate(acc_data):
-                if i!=4:
-                    acc_data[i]/=n_samples
+                acc_data[i]/=n_samples
             n_samples = 0
             acc_data[2],acc_data[3] = dlog.c_to_v(acc_data[2],acc_data[3])
             h_file = DT.strftime(my_now, '%Y-%m-%d')+'_raw.cca'
@@ -150,6 +144,3 @@ while(True):
             min_temp = float('inf')
             max_vel = float('-inf')
             acc_data = [0,0,0,0,0,0,0,0,0]
-  except:
-    print("error!!!")
-    time.sleep(10)

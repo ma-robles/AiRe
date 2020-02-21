@@ -62,7 +62,7 @@ def to_mbar(pres):
     return pres/100
 
 def to_batt(v):
-    r1=22000
-    r2=47000
+    r1=10500
+    r2=22000
     k = r1/(r2+r1)
     return v*(3.3/1024)/k
