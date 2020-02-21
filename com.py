@@ -1,6 +1,7 @@
 import serial
 from datetime import datetime as DT
 import datalog as dlog
+import time
 
 def raw2int(data):
     new_data = []
@@ -66,7 +67,9 @@ def int2str2(data):
     return strdata
 
 
-port_name = '/dev/ttyUSB0'
+#port_name = '/dev/ttyUSB0'
+#port_name = '/dev/ttyAMA0'
+port_name = '/dev/ttyS0'
 print('Puerto abierto')
 #init data
 my_minute = DT.strftime(DT.now(), '%Y-%m-%d %H:%M')
@@ -77,8 +80,10 @@ max_temp = float('-inf')
 min_temp = float('inf')
 max_vel = float('-inf')
 header_s = 'Fecha,UV,Radiación,WS,WD,Lluvia,Temperatura,Humedad,Presión,vBat,Tmin,Tmax,WSmax'
-with serial.Serial(port_name) as ser:
-    while(True):
+while(True):
+  try:
+    with serial.Serial(port_name) as ser:
+    #while(True):
         #get data
         start_data = b'0'
         while int.from_bytes(start_data,'big')!=0xaa:
@@ -145,3 +150,6 @@ with serial.Serial(port_name) as ser:
             min_temp = float('inf')
             max_vel = float('-inf')
             acc_data = [0,0,0,0,0,0,0,0,0]
+  except:
+    print("error!!!")
+    time.sleep(10)
