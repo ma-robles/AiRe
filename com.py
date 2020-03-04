@@ -2,6 +2,7 @@ import serial
 from datetime import datetime as DT
 import datalog as dlog
 import time
+from sys import argv
 
 def raw2int(data):
     new_data = []
@@ -80,6 +81,7 @@ max_temp = float('-inf')
 min_temp = float('inf')
 max_vel = float('-inf')
 header_s = 'Fecha,UV,Radiación,WS,WD,Lluvia,Temperatura,Humedad,Presión,vBat,Tmin,Tmax,WSmax'
+pre_name=argv[1]
 while(True):
   try:
     with serial.Serial(port_name) as ser:
@@ -130,7 +132,7 @@ while(True):
                     acc_data[i]/=n_samples
             n_samples = 0
             acc_data[2],acc_data[3] = dlog.c_to_v(acc_data[2],acc_data[3])
-            h_file = DT.strftime(my_now, '%Y-%m-%d')+'_raw.cca'
+            h_file = pre_name+DT.strftime(my_now, '%Y-%m-%d')+'_raw.cca'
             with open(h_file, 'a') as values_file:
                 print(mytime, 
                         int2str(acc_data+[min_temp,max_temp,max_vel]),
