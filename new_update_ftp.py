@@ -1,14 +1,17 @@
 #ftp upload
 from ftplib import FTP
 import os
+from sys import argv
 
-def get_update_list(server_name, user, password, name_filter):
+def get_update_list(server_name, user, password, name_filter, folder='.'):
     print('server connection...', end= ' ')
     ftp = FTP(server_name)
     print('OK')
     print('login...',end=' ')
     ftp.login(user, password)
     print('OK')
+    print('moving to ', folder)
+    ftp.cwd(folder)
     print('Get server file list...')
     try:
         server_all = ftp.mlsd("./", facts=['size'])
@@ -46,11 +49,14 @@ def get_update_list(server_name, user, password, name_filter):
     return update_list
 
 #connection
-server_name = "132.248.8.31"
-user = 'pembu'
-password = 'p3mbu'
-name_filter = '.py'
-update_list = get_update_list(server_name, user, password, name_filter)
+server_name = argv[1]
+user = argv[2]
+password = argv[3]
+folder = argv[4]
+name_filter = '.cca'
+print('server:', user,'@',server_name, )
+print('files:', name_filter)
+update_list = get_update_list(server_name, user, password, name_filter, folder)
 
 print('update list')
 ftp = FTP(server_name)
