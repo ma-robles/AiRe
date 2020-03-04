@@ -61,6 +61,7 @@ update_list = get_update_list(server_name, user, password, name_filter, folder)
 print('update list')
 ftp = FTP(server_name)
 ftp.login(user, password)
+ftp.cwd(folder)
 for filename in update_list:
     print('uploading:', filename)
     with open(filename, 'rb') as fp:
