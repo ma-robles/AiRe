@@ -99,6 +99,12 @@ while(True):
         print(data_pack)
         data_pack = raw2int(data_pack)
         data_pack = int2val(data_pack)
+        #check temperature
+        if data_pack[5] > 123.8 and data_pack<2581.0:
+            continue
+        if data_pack[5] < -40.0:
+            continue
+
         idata = data_pack[:]
         wind_c = dlog.c_to_v(data_pack[2], data_pack[3])
         #r
@@ -128,6 +134,7 @@ while(True):
             print('minute:', new_minute)
             my_minute = new_minute
             for i,d in enumerate(acc_data):
+                #exclude rain
                 if i!=4:
                     acc_data[i]/=n_samples
             n_samples = 0
