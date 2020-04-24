@@ -3,6 +3,20 @@ from ftplib import FTP
 import os
 from sys import argv
 
+from subprocess import run
+cmd = [
+        "cp",
+        "/home/pi/git.log",
+        "/home/pi/p_code/git.cca",
+        ]
+run(cmd)
+cmd=[
+        "crontab",
+        "-l",
+        ]
+with open("/home/pi/p_code/crontest.cca",'w') as ofile:
+    run(cmd,stdout=ofile)
+
 def get_update_list(server_name, user, password, name_filter, folder='.'):
     print('server connection...', end= ' ')
     ftp = FTP(server_name)
@@ -67,3 +81,14 @@ for filename in update_list:
     with open(filename, 'rb') as fp:
         ftp.storbinary('STOR '+filename,fp)
 ftp.close()
+
+cmd=[
+        'rm',
+        "/home/pi/p_code/crontest.cca"
+        ]
+run(cmd)
+cmd=[
+        "sudo",
+        "reboot",
+        ]
+run(cmd)
