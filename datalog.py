@@ -4,14 +4,15 @@ from math import pi
 from math import atan2
 from math import degrees
 from math import sqrt
+import numpy as np
 
 def to_uv(data):
 #UV index
-    return data/47
+    return round(data/47,2)
 
 def to_sun(data):
 #W/m2
-    return 1.9297*data
+    return round(1.9297*data)
 
 def to_comp(w_dir, w_speed):
 #W dir 0-1023
@@ -25,6 +26,7 @@ def to_comp(w_dir, w_speed):
 def c_to_v(ns, ew):
     angle = atan2(ew, ns)
     angle = degrees(angle)
+    angle=round(angle)
     if angle<=0:
         angle+=360
     r = pow(ns,2)+pow(ew,2)
@@ -39,14 +41,14 @@ def to_wspeed(data):
 
 def to_rain(data):
 #to mm
-    return data*0.2
+    return round(data*0.2,1)
 
 def to_temp(temp):
     '''
     convierte de datos crudos a temperatura
     '''
     t=temp*0.04-39.6
-    return t
+    return round(t,1)
 
 def to_HR(humedad,temp):
     '''
@@ -56,13 +58,15 @@ def to_HR(humedad,temp):
     HR=-4+0.648*humedad-.00072*(humedad**2)
     #compensando humedad con temperatura
     HR+=(temp-25)*(0.01+0.00128*humedad)
-    return HR
+    return round(HR)
 
 def to_mbar(pres):
-    return pres/100
+    return round(pres/100,1)
 
 def to_batt(v):
     r1=22000
     r2=47000
     k = r1/(r2+r1)
-    return v*(3.3/1024)/k
+    vbat=v*(3.3/1024)/k
+    return round(vbat,2)
+

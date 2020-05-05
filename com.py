@@ -3,6 +3,8 @@ from datetime import datetime as DT
 import datalog as dlog
 import time
 from sys import argv
+import post
+import numpy as np
 
 def raw2int(data):
     new_data = []
@@ -41,53 +43,39 @@ def int2val(data):
     new_data.append(dlog.to_batt(data[8]))
     return new_data
 
-def int2str(data):
-    strdata = '{d[0]:.1f},'.format(d=data)
-    strdata += '{d[1]:.0f},'.format(d=data)
-    strdata += '{d[2]:.1f},'.format(d=data)
-    strdata += '{d[3]:.0f},'.format(d=data)
-    strdata += '{d[4]:.1f},'.format(d=data)
-    strdata += '{d[5]:.1f},'.format(d=data)
-    strdata += '{d[6]:.0f},'.format(d=data)
-    strdata += '{d[7]:.1f},'.format(d=data)
-    strdata += '{d[8]:.1f},'.format(d=data)
-    strdata += '{d[9]:.1f},'.format(d=data)
-    strdata += '{d[10]:.1f},'.format(d=data)
-    strdata += '{d[11]:.1f}'.format(d=data)
-    return strdata
-def int2str2(data):
-    strdata = '{d[0]:.1f},'.format(d=data)
-    strdata += '{d[1]:.0f},'.format(d=data)
-    strdata += '{d[2]:.1f},'.format(d=data)
-    strdata += '{d[3]:.0f},'.format(d=data)
-    strdata += '{d[4]:.1f},'.format(d=data)
-    strdata += '{d[5]:.1f},'.format(d=data)
-    strdata += '{d[6]:.0f},'.format(d=data)
-    strdata += '{d[7]:.1f},'.format(d=data)
-    strdata += '{d[8]:.1f}'.format(d=data)
-    return strdata
-
 
 #port_name = '/dev/ttyUSB0'
 #port_name = '/dev/ttyAMA0'
-port_name = '/dev/ttyS0'
+try:
+    port_name=argv[2]
+except:
+    port_name = '/dev/ttyS0'
 print('Puerto abierto')
 #init data
 my_minute = DT.strftime(DT.now(), '%Y-%m-%d %H:%M')
-n_samples = 0
-acc_data = [0,0,0,0,0,0,0,0,0]
 v_file = 'values.cca'
-max_temp = float('-inf')
-min_temp = float('inf')
-max_vel = float('-inf')
+names={
+        'uv':0,
+        'sun':1,
+        'ws':2,
+        'wd':3,
+        'rain':4,
+        'temp':5,
+        'hr':6,
+        'pres':7,
+        'vbat':8,
+        }
 header_s = 'Fecha,UV,Radiación,WS,WD,Lluvia,Temperatura,Humedad,Presión,vBat,Tmin,Tmax,WSmax'
 pre_name=argv[1]
+min_data=10
+data_array=[]
+data_varray=[]
 while(True):
   try:
     with serial.Serial(port_name) as ser:
-    #while(True):
         #get data
         start_data = b'0'
+        #add timeout to this loop
         while int.from_bytes(start_data,'big')!=0xaa:
             start_data = ser.read()
         data_pack = ser.read(15)
@@ -96,69 +84,105 @@ while(True):
         if checksum!=c_checksum:
             continue
         #convert
-        print(data_pack)
+        #print(data_pack)
         data_pack = raw2int(data_pack)
         data_pack = int2val(data_pack)
-        #check temperature
-        if data_pack[5] > 123.8 and data_pack<2581.0:
-            continue
-        if data_pack[5] < -40.0:
-            continue
-
         idata = data_pack[:]
+        data_array.append(data_pack)
+        #wind convertion
         wind_c = dlog.c_to_v(data_pack[2], data_pack[3])
+        #saving
         #r
-        idata[2] = wind_c[0]
+        idata[names['ws']] = wind_c[0]
         #angle
-        idata[3] = wind_c[1]
-        if wind_c[0]>max_vel:
-            max_vel = wind_c[0]
-        if data_pack[5]>max_temp:
-            max_temp = data_pack[5]
-        if data_pack[5]<min_temp:
-            min_temp = data_pack[5]
-        
-        n_samples+=1
-        for i,d in enumerate(data_pack):
-            #print(i,d)
-            acc_data[i] += d
-        str_data = int2str2(idata)
+        idata[names['wd']] = wind_c[1]
+        data_varray.append(idata)
+        #data to string
+        str_data = ["{:.2f}".format(number) for number in idata]
+        str_data = ','.join(str_data)
+        #time
         my_now = DT.now()
         mytime = DT.strftime(my_now, '%Y-%m-%d %H:%M:%S')
         new_minute = DT.strftime(my_now, '%Y-%m-%d %H:%M')
-        #actual
+        #save current data
         with open(v_file, 'w') as values_file:
             print(mytime, str_data, file= values_file, sep=',')
+        #print to stdout
         print(mytime, str_data)
+        #end of minute
         if new_minute != my_minute:
-            print('minute:', new_minute)
+            #update minute
             my_minute = new_minute
-            for i,d in enumerate(acc_data):
-                #exclude rain
-                if i!=4:
-                    acc_data[i]/=n_samples
-            n_samples = 0
-            acc_data[2],acc_data[3] = dlog.c_to_v(acc_data[2],acc_data[3])
+            #convert array to numpy
+            data_array=np.array(data_array)
+            data_varray=np.array(data_varray)
+            #check min size
+            n_samples=data_array.shape[0]
+            print('minute:', new_minute, n_samples, data_array.shape)
+            if n_samples<min_data:
+                data_array=[]
+                data_varray=[]
+                continue
+            #detect outliers
+            press_col=data_array.T[names['pres']]
+            outliers=post.detect_outlier_mad(press_col)
+            #deleting outliers
+            data_array=data_array[np.logical_not(outliers)]
+            data_varray=data_varray[np.logical_not(outliers)]
+            print('clean data:',data_array.shape)
+            #max wind speed
+            ws_imax=np.argmax(data_varray.T[names['ws']])
+            ws_max=data_varray.T[names['ws']][ws_imax]
+            wd_max=data_varray.T[names['wd']][ws_imax]
+            min_temp=np.min(data_array.T[names['temp']])
+            max_temp=np.max(data_array.T[names['temp']])
+            #acc values
+            data_acc=np.sum(data_array, axis=0)
+            #get accumulated rain
+            rain_acc= data_acc[names['rain']]
+            #output vector
+            #mean
+            data_out=np.mean(data_array, axis=0)
+            #add rain
+            data_out[names['rain']]=rain_acc
+            #wind convertion
+            ws,wd=dlog.c_to_v(data_out[names['ws']],data_out[names['wd']])
+            data_out[names['ws']]=ws
+            data_out[names['wd']]=wd
+            data_out=np.around(data_out,decimals=2)
+            #save
             h_file = pre_name+DT.strftime(my_now, '%Y-%m-%d')+'_raw.cca'
+            #by-day file
             with open(h_file, 'a') as values_file:
+                str_data = ["{}".format(number) for number in data_out]
+                str_data = ','.join(str_data)
                 print(mytime, 
-                        int2str(acc_data+[min_temp,max_temp,max_vel]),
+                        str_data,
+                        min_temp,
+                        max_temp,
+                        ws_max,
+                        wd_max,
                         file= values_file,
                         sep=',',
                         )
+            #by-minute file
             with open('minute.cca', 'w') as minute_file:
                 print(header_s,
                         file=minute_file,
                         )
                 print(mytime, 
-                        int2str(acc_data+[min_temp,max_temp,max_vel]),
+                        str_data,
+                        min_temp,
+                        max_temp,
+                        ws_max,
+                        wd_max,
                         file= minute_file,
                         sep=',',
                         )
-            max_temp = float('-inf')
-            min_temp = float('inf')
-            max_vel = float('-inf')
-            acc_data = [0,0,0,0,0,0,0,0,0]
-  except:
-    print("error!!!")
+            data_array=[]
+            data_varray=[]
+  except Exception as e:
+    print("error!!!", e)
+    data_array=[]
+    data_varray=[]
     time.sleep(10)
