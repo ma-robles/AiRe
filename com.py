@@ -50,7 +50,7 @@ try:
     port_name=argv[2]
 except:
     port_name = '/dev/ttyS0'
-print('Puerto abierto')
+print('Puerto:', port_name)
 #init data
 my_minute = DT.strftime(DT.now(), '%Y-%m-%d %H:%M')
 v_file = 'values.cca'
@@ -66,7 +66,9 @@ names={
         'vbat':8,
         }
 header_s = 'Fecha,UV,Radiación,WS,WD,Lluvia,Temperatura,Humedad,Presión,vBat,Tmin,Tmax,WSmax'
+#id name, must include '_'
 pre_name=argv[1]
+#minimum data required
 min_data=10
 data_array=[]
 data_varray=[]
@@ -87,8 +89,10 @@ while(True):
         #print(data_pack)
         data_pack = raw2int(data_pack)
         data_pack = int2val(data_pack)
-        idata = data_pack[:]
+        #add data
         data_array.append(data_pack)
+        #polar wind version
+        idata = data_pack[:]
         #wind convertion
         wind_c = dlog.c_to_v(data_pack[2], data_pack[3])
         #saving
@@ -100,7 +104,7 @@ while(True):
         #data to string
         str_data = ["{:.2f}".format(number) for number in idata]
         str_data = ','.join(str_data)
-        #time
+        #check time
         my_now = DT.now()
         mytime = DT.strftime(my_now, '%Y-%m-%d %H:%M:%S')
         new_minute = DT.strftime(my_now, '%Y-%m-%d %H:%M')
@@ -118,7 +122,6 @@ while(True):
             data_varray=np.array(data_varray)
             #check min size
             n_samples=data_array.shape[0]
-            print('minute:', new_minute, n_samples, data_array.shape)
             if n_samples<min_data:
                 data_array=[]
                 data_varray=[]
@@ -129,7 +132,7 @@ while(True):
             #deleting outliers
             data_array=data_array[np.logical_not(outliers)]
             data_varray=data_varray[np.logical_not(outliers)]
-            print('clean data:',data_array.shape)
+            print('minute:', new_minute, n_samples,cdata_array.shape[0])
             #max wind speed
             ws_imax=np.argmax(data_varray.T[names['ws']])
             ws_max=data_varray.T[names['ws']][ws_imax]
