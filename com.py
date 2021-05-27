@@ -5,6 +5,7 @@ import time
 from sys import argv
 import post
 import numpy as np
+from gpiozero import LED
 
 def raw2int(data):
     new_data = []
@@ -44,6 +45,10 @@ def int2val(data):
     return new_data
 
 
+#turn ON ARLEN
+pwr= LED(16)
+led.on()
+print("ARLEN ON")
 #port_name = '/dev/ttyUSB0'
 #port_name = '/dev/ttyAMA0'
 try:
