@@ -47,7 +47,7 @@ def int2val(data):
 
 #turn ON ARLEN
 pwr= LED(16)
-led.on()
+pwr.on()
 print("ARLEN ON")
 #port_name = '/dev/ttyUSB0'
 #port_name = '/dev/ttyAMA0'
