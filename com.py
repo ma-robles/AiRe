@@ -137,7 +137,7 @@ while(True):
             #deleting outliers
             data_array=data_array[np.logical_not(outliers)]
             data_varray=data_varray[np.logical_not(outliers)]
-            print('minute:', new_minute, n_samples,cdata_array.shape[0])
+            print('minute:', new_minute, n_samples,data_array.shape[0])
             #max wind speed
             ws_imax=np.argmax(data_varray.T[names['ws']])
             ws_max=data_varray.T[names['ws']][ws_imax]
